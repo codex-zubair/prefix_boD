@@ -28,10 +28,14 @@ double zag, zig;
 double up_current_average = 0;  // Current average value
 //int up_total_new_value = 0;                     // Number of values contributing to current average
 double up_new_value = 0;        // New value to be added
+double up_new_average;
+
+
 
 double down_current_average = 0;  // Current average value
 //int up_total_new_value = 0;                     // Number of values contributing to current average
 double down_new_value = 0;        // New value to be added
+double down_new_average;
 //AVERAGE MOVE VALUE CALCULATOR
 
 
@@ -193,10 +197,25 @@ if(OrdersTotal()== 0)
            
             //---------------------------------------------
             // Calculate new average
-            double down_new_average = ((down_current_average * zig_change_checker) + down_staying_same) / (zig_change_checker + 1);
-            Print("DOWN New Average value: ", down_new_average);
+            down_new_average = ((down_current_average * zig_change_checker) + down_staying_same) / (zig_change_checker + 1);
+            Print("DOWN New Average value: ", NormalizeDouble(down_new_average, 2));
             // Calculate new average
             //---------------------------------------------
+            
+            
+            
+            // ========UP DOWN diffarence========
+            // Subtract the value
+            double result = down_new_average - up_new_average;
+
+            // Take the absolute value to ensure it's positive
+            double absoluteResult = MathAbs(result);
+
+            // Round the absolute value to the nearest integer
+            double roundedResult = NormalizeDouble(absoluteResult, 0);
+            Print("Diffarences:- ", roundedResult);
+            // ========Up DOWN diffarences=========
+            
         }
         
         
@@ -230,8 +249,8 @@ if(OrdersTotal()== 0)
             Print("Up_change Checker: ",zig_change_checker);
             //---------------------------------------------
             // Calculate new average
-            double up_new_average = ((up_current_average * zig_change_checker) + up_staying_same) / (zig_change_checker + 1);
-            Print("UP New Average value: ", up_new_average);
+            up_new_average = ((up_current_average * zig_change_checker) + up_staying_same) / (zig_change_checker + 1);
+            Print("UP New Average value: ", NormalizeDouble(up_new_average, 2));
             // Calculate new average
             //---------------------------------------------
 
