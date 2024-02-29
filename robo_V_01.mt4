@@ -30,7 +30,7 @@ double up_current_average = 0;  // Current average value
 double up_new_value = 0;        // New value to be added
 double up_new_average;
 
-
+double zig_zag_diffarance;
 
 double down_current_average = 0;  // Current average value
 //int up_total_new_value = 0;                     // Number of values contributing to current average
@@ -41,6 +41,15 @@ double down_new_average;
 
 double prevA = 0.00;
 double prevB = 0.00;
+
+
+
+//=========== BUY SELL ORDER SECTION VARIABLE =============//
+bool placed_order =  false;
+
+//=========== BUY SELL ORDER SECTION VARIABLE =============//
+
+
 
 
 
@@ -91,32 +100,8 @@ void OnTick()
   }
   
   
-void PlaceBuyOrder()
-{
-    double lotSize = 1.0; // Volume of the order
-    double price = SymbolInfoDouble(_Symbol, SYMBOL_ASK); // Current ask price
-    
-    int cmd = OP_BUY; // Order type (OP_BUY for buy orders)
-    double volume = lotSize;
-    double openPrice = price;
-    int slippage = 3; // Maximum allowed slippage
-    int magicNumber = 0; // Optional, used to distinguish orders from different Expert Advisors
-
-    double stopLoss = NormalizeDouble(price - 50 * Point, Digits); // Example: setting stop loss 50 pips below the current price
-    double takeProfit = NormalizeDouble(price + 100 * Point, Digits); // Example: setting take profit 100 pips above the current price
-
-    int ticket = OrderSend(_Symbol, cmd, volume, openPrice, slippage, stopLoss, takeProfit, NULL, magicNumber, 0, clrNONE);
-
-    if(ticket > 0)
-    {
-        Print("Buy order placed successfully. Ticket: ", ticket);
-    }
-    else
-    {
-        int error = GetLastError();
-        Print("Failed to place buy order. Error code: ", error);
-    }
-}
+  
+  
 
 
 
@@ -129,8 +114,7 @@ void OnTimer()
     
  
     
-if(OrdersTotal()== 0)
-   {
+
 
       //PlaceBuyOrder();
           // Call the functions sequentially
@@ -167,6 +151,8 @@ if(OrdersTotal()== 0)
     
       
       Print("5_M_DOWN: ",zag," 5_M_UP: ", zig);
+      
+      
       
       
       // After 10 seconds it will check it has changed or not.
@@ -212,8 +198,8 @@ if(OrdersTotal()== 0)
             double absoluteResult = MathAbs(result);
 
             // Round the absolute value to the nearest integer
-            double roundedResult = NormalizeDouble(absoluteResult, 0);
-            Print("Diffarences:- ", roundedResult);
+            double zig_zag_diffarance = NormalizeDouble(absoluteResult, 0);
+            Print("Diffarences:- ", zig_zag_diffarance);
             // ========Up DOWN diffarences=========
             
         }
@@ -223,7 +209,7 @@ if(OrdersTotal()== 0)
         
         
        
-        
+       // ==============  BUY SECTION ================// 
       
         // After 20 Second it will check it has changed or not   
         if(zig != prevA)
@@ -255,12 +241,142 @@ if(OrdersTotal()== 0)
             //---------------------------------------------
 
           }  
-          
+         // ======================BUY SECTION ======================
         
+        
+        
+        
+        
+        // ==============PLACED BUY SELL ORDER FUNCTION===============//
+         
+         
+         //Buying order based on diffarences and when up staying 10 second same
+         if(OrdersTotal()== 0)
+         {
+            //Print("trying to place the ORDERRRRRR!!!!!!");
+              if(zig_zag_diffarance <= 7 || zig_zag_diffarance >= 5)
+              {
+               //Print("yeeeee i'm INSIDE ------  trying to place the ORDERRRRRR!!!!!!");
+               if(zig_counter == 10)
+                  {
+                     PlaceBuyOrder();  
+                  }    
+              }         
+         }
+         
+       
+        
+        
+         //---------------------Closing Order Function..----------------------------
+          
+         if(OrdersTotal()!=0)
+         {
+            if(zig_zag_diffarance  >= 8 )
+            {
+               if(zig_counter == 10)
+                  {
+                     CloseAllOrders();
+                  }         
+            }     
+         }
+         
+         //---------------------Closing Order Function..----------------------------
+         
+         // ==============PLACED BUY SELL ORDER FUNCTION===============//
+         
+         
+        
+ 
+}
 
+
+
+//===================================START======================================//
+//===================== PLACED BUY ORDER WITHOUYT LIMIT =========================//
+  
+ void PlaceBuyOrder()
+{
+    double lotSize = 1.0; // Volume of the order
+    double price = SymbolInfoDouble(_Symbol, SYMBOL_ASK); // Current ask price
+    
+    int cmd = OP_BUY; // Order type (OP_BUY for buy orders)
+    double volume = lotSize;
+    double openPrice = price;
+    int slippage = 3; // Maximum allowed slippage
+    int magicNumber = 0; // Optional, used to distinguish orders from different Expert Advisors
+
+    double stopLoss = 0; // No stop loss
+    double takeProfit = 0; // No take profit
+
+    int ticket = OrderSend(_Symbol, cmd, volume, openPrice, slippage, stopLoss, takeProfit, NULL, magicNumber, 0, clrNONE);
+
+    if(ticket > 0)
+    {
+        Print("Buy order placed successfully. Ticket: ", ticket);
+    }
+    else
+    {
+        int error = GetLastError();
+        Print("Failed to place buy order. Error code: ", error);
+    }
+}
+
+//===================================START======================================//
+//=========END========== PLACED BUY ORDER WITHOUT LIMIT =========END==========//
+
+
+       
+// ==============CLOSE ALL ORDER FUNCTION===============//       
+void CloseAllOrders()
+{
+     
+            
+   //Closing Order here
+   int total = OrdersTotal();
+   // Log in the terminal the total number of orders.
+   
+      
+   // Start a loop to scan all the orders.
+   // The loop starts from the last, otherwise it could skip orders.
+   for (int i = total - 1; i >= 0; i--)
+   {
+      // If the order cannot be selected, throw and log an error.
+      if (OrderSelect(i, SELECT_BY_POS) == false)
+         
+         { 
+         Print("ERROR - Unable to select the order - ", GetLastError());
+         break;
+         
+         } 
+
+         // Result variable - to check if the operation is successful or not.
+         bool result = false;
+      
+      // Update the exchange rates before closing the orders.
+         RefreshRates();
+
+         // Bid and Ask price for the order's symbol.
+         double BidPrice = MarketInfo(OrderSymbol(), MODE_BID);
+         double AskPrice = MarketInfo(OrderSymbol(), MODE_ASK);
+
+         // Closing the order using the correct price depending on the order's type.
+         if (OrderType() == OP_BUY)
+            {
+               result = OrderClose(OrderTicket(), OrderLots(), BidPrice, 3);
+            }
+         else if (OrderType() == OP_SELL)
+            {
+               result = OrderClose(OrderTicket(), OrderLots(), AskPrice, 3);
+            }
+      
+            // If there was an error, log it.
+         if (!result) Print("ERROR - Unable to close the order - ", OrderTicket(), " - Error ", GetLastError());
    }
 }
 
+// ==============CLOSE ALL ORDER FUNCTION===============//     
+         
+  
 
 
 
