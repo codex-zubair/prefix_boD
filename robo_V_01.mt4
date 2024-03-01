@@ -31,6 +31,8 @@ double up_new_value = 0;        // New value to be added
 double up_new_average;
 
 double zig_zag_diffarance;
+double unstable_zig_zag_difference;
+bool result_counter_done;
 
 double down_current_average = 0;  // Current average value
 //int up_total_new_value = 0;                     // Number of values contributing to current average
@@ -171,11 +173,13 @@ void OnTimer()
                
             }
         }
-        // 1.08287 5_M_UP: 1.08545
+     
 
         
       else if (zag == prevB)
-        {
+        {  
+          
+            
            down_staying_same++;
            Print("Down staying same: " , down_staying_same);
            Print("Down equal now!");
@@ -193,14 +197,45 @@ void OnTimer()
             // ========UP DOWN diffarence========
             // Subtract the value
             double result = down_new_average - up_new_average;
+            //Print("result" , result);
+            
+            //prevent result counter problem by true false.
+            
+            //==========================================
+            //==========================================
+            //==========================================
+            //==========================================
+          
+             //==========================================
+             //==========================================
+             //==========================================
+             //==========================================
+             //==========================================
 
             // Take the absolute value to ensure it's positive
             double absoluteResult = MathAbs(result);
-
+            
+            
+            //Fixing also zigzag value reload issue.
             // Round the absolute value to the nearest integer
             double zig_zag_diffarance = NormalizeDouble(absoluteResult, 0);
-            Print("Diffarences:- ", zig_zag_diffarance);
+            if(zig_zag_diffarance >= 10.0)
+            {
+               result_counter_done = true;
+           
+            }
+            Print("Distance: ", zig_zag_diffarance);
+            
+            
             // ========Up DOWN diffarences=========
+            
+            
+            
+            
+            //======UP DOWN diffarence Making stable value=====
+            
+            
+            //======UP DOWN diffarence Making stable value=====
             
         }
         
@@ -227,7 +262,8 @@ void OnTimer()
             }
           
           }
-          else if (zig == prevA)
+        
+           if (zig == prevA)
           {
             up_staying_same++;
             Print("UP staying same:" , up_staying_same);
@@ -247,39 +283,57 @@ void OnTimer()
         
         
         
+        
+        
         // ==============PLACED BUY SELL ORDER FUNCTION===============//
          
          
          //Buying order based on diffarences and when up staying 10 second same
-         if(OrdersTotal()== 0)
+         if(OrdersTotal()== 0 && result_counter_done && placed_order == false)
          {
-            //Print("trying to place the ORDERRRRRR!!!!!!");
-              if(zig_zag_diffarance <= 7 || zig_zag_diffarance >= 5)
+            Print("trying to place the ORDERRRRRR!!!!!!");
+              if(zig_zag_diffarance == 6.0 || zig_zag_diffarance >= 4.0)
               {
-               //Print("yeeeee i'm INSIDE ------  trying to place the ORDERRRRRR!!!!!!");
+               Print("yeeeee i'm INSIDE ------  trying to place the ORDERRRRRR!!!!!!");
+               Print("zig counter: ", zig_counter);
+               
+               //Error handler//
+               if (zig_counter >= 20)
+               { 
+               zig_counter =0;
+               }
+               
                if(zig_counter == 10)
                   {
-                     PlaceBuyOrder();  
+                     PlaceBuyOrder();
+                     placed_order = true;
+                     result_counter_done =false;
+                     
                   }    
-              }         
+              }        
          }
          
        
         
         
          //---------------------Closing Order Function..----------------------------
-          
-         if(OrdersTotal()!=0)
+ 
+         if(OrdersTotal()!=0 && result_counter_done && placed_order)
          {
-            if(zig_zag_diffarance  >= 8 )
+            Print("Order not Empty");
+            Print("zigzag Diffffffff: ",zig_zag_diffarance);
+            if(zig_zag_diffarance  >= 8.0)
+            Print("trying to close Order");
             {
                if(zig_counter == 10)
                   {
+                     Print("close market");
                      CloseAllOrders();
+                     placed_order = false;
                   }         
             }     
          }
-         
+    
          //---------------------Closing Order Function..----------------------------
          
          // ==============PLACED BUY SELL ORDER FUNCTION===============//
@@ -296,7 +350,7 @@ void OnTimer()
   
  void PlaceBuyOrder()
 {
-    double lotSize = 1.0; // Volume of the order
+    double lotSize = 3.0; // Volume of the order
     double price = SymbolInfoDouble(_Symbol, SYMBOL_ASK); // Current ask price
     
     int cmd = OP_BUY; // Order type (OP_BUY for buy orders)
@@ -313,6 +367,8 @@ void OnTimer()
     if(ticket > 0)
     {
         Print("Buy order placed successfully. Ticket: ", ticket);
+        placed_order = true;  
+        
     }
     else
     {
@@ -362,7 +418,7 @@ void CloseAllOrders()
          // Closing the order using the correct price depending on the order's type.
          if (OrderType() == OP_BUY)
             {
-               result = OrderClose(OrderTicket(), OrderLots(), BidPrice, 3);
+               result = OrderClose(OrderTicket(), OrderLots(), BidPrice, 3); 
             }
          else if (OrderType() == OP_SELL)
             {
